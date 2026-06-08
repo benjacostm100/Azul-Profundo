@@ -10,9 +10,6 @@ import { useState, useRef } from "react";
 import { toast } from "sonner";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 import ContactInfo from "@/components/ContactInfo";
-import emailjs from "@emailjs/browser";
-
-
 export default function ContactPage() {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -24,7 +21,6 @@ export default function ContactPage() {
 
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<HCaptcha>(null);
-  const formRef = useRef<HTMLFormElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -43,27 +39,31 @@ export default function ContactPage() {
     }
 
     try {
-      const templateParams = {
-        name: `${formData.firstName} ${formData.lastName}`,
-        phone: formData.phone,
-        email: formData.email,
-        message: formData.message,
-        time: new Date().toLocaleString(),
-      };
+      const response = await fetch("https://formsubmit.co/ajax/Azulprofundo-buceo@hotmail.com", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          nombre: `${formData.firstName} ${formData.lastName}`,
+          telefono: formData.phone,
+          email: formData.email,
+          mensaje: formData.message,
+          _subject: "Nuevo mensaje desde la web - Azul Profundo",
+          _template: "table",
+          _captcha: "false",
+        })
+      });
 
-      await emailjs.send(
-        "service_pxqbdh7",          // Reemplazar con tu SERVICE ID
-        "template_srshhtm",         // Reemplazar con tu TEMPLATE ID
-        templateParams,
-        "5LU4B4p8JEgxzEvVn"       // Reemplazar con tu PUBLIC KEY de EmailJS
-      );
+      if (!response.ok) throw new Error("Error en el servidor");
 
       toast.success("¡Mensaje enviado! Te contactaremos pronto.");
       setFormData({ firstName: "", lastName: "", phone: "", email: "", message: "" });
       setCaptchaToken(null);
       captchaRef.current?.resetCaptcha();
     } catch (error) {
-      console.error("EmailJS error:", error);
+      console.error("FormSubmit error:", error);
       toast.error("Ocurrió un error al enviar el mensaje. Inténtalo nuevamente.");
     }
   };
@@ -100,7 +100,7 @@ export default function ContactPage() {
                     Formulario de Contacto
                   </h2>
 
-                  <form onSubmit={handleSubmit} ref={formRef} className="space-y-6">
+                  <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label htmlFor="firstName" className="block text-gray-700 font-medium mb-2">
